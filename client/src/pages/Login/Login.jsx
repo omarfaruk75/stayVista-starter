@@ -1,13 +1,16 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
 import toast from 'react-hot-toast';
-import axios from 'axios';
 import useAuth from '../../hooks/useAuth';
 import { TbFidgetSpinner } from 'react-icons/tb';
+import { useState } from 'react';
 
 const Login = () => {
   const { signIn, signInWithGoogle, loading, setLoading, resetPassword } = useAuth();
+  const [email, setEmail] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location?.state || '/';
   const handleSubmit = async e => {
     e.preventDefault()
     const form = e.target
@@ -15,29 +18,40 @@ const Login = () => {
     const password = form.password.value
     console.log(email, password);
 
-
     try {
       setLoading(true)
       const result = await signIn(email, password)
       console.log(result);
-      navigate('/')
+      navigate(from)
       toast.success('Sign In Successful')
     }
     catch (err) {
+      setLoading(false)
       console.log(err);
       toast.error(err.message)
-      setLoading(false)
+
     }
   }
   const handleGoogleSignIn = async () => {
     await signInWithGoogle()
-    navigate('/')
+    navigate(from)
     toast.success('Sign In Successful')
   }
-  const handleResetPassword = () => {
-    resetPassword()
-  }
+  const handleResetPassword = async () => {
+    if (!email) return toast.error('please wirte your email first')
+    try {
+      await resetPassword(email)
+      toast.success('Request Success! Check your email for furter process...')
+      setLoading(false)
+    }
+    catch (err) {
+      setLoading(false)
+      toast.error(err.message)
 
+    }
+    console.log(email);
+
+  }
   return (
 
     <div className='flex justify-center items-center min-h-screen'>
@@ -63,6 +77,7 @@ const Login = () => {
                 type='email'
                 name='email'
                 id='email'
+                onBlur={e => setEmail(e.target.value)}
                 required
                 placeholder='Enter Your Email Here'
                 className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-rose-500 bg-gray-200 text-gray-900'
