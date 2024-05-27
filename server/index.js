@@ -47,6 +47,7 @@ async function run() {
   try {
 
 const roomsCollection = client.db('stayvista').collection('rooms')
+
 //get all rooms data from database
 app.get('/rooms', async(req,res)=>{
   const category = req.query.category
@@ -54,6 +55,21 @@ app.get('/rooms', async(req,res)=>{
   if(category && category !=="null") query={category}
   const result = await roomsCollection.find(query).toArray()
   res.send(result)
+})
+
+//save a room data in database
+app.post('/room',async(req,res)=>{
+  const roomData=req.body;
+  const result=await roomsCollection.insertOne(roomData);
+  res.send(result)
+})
+//get all rooms data for host
+app.get('/my-listings/:email',async(req,res)=>{
+  const email=req.params.email
+  const query={'host.email':email} 
+  const result=await roomsCollection.find(query).toArray()
+  res.send(result);
+
 })
 
 //get a single data from database

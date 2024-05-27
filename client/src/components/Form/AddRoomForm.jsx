@@ -1,17 +1,24 @@
 
-import { useState } from 'react';
+
+import { TbFidgetSpinner } from 'react-icons/tb';
+
 import { categories } from '../Categories/CategoriesData'
 import { DateRange } from 'react-date-range';
-const AddRoomForm = ({ dates, handleDates }) => {
-    const [state, setState] = useState({
-        startDate: new Date(),
-        endDate: null,
-        key: 'selection'
-    })
+const AddRoomForm = ({
+    dates,
+    handleDates,
+    handleSubmit,
+    setImagePreview,
+    imagePreview,
+    imageText,
+    handlImage,
+    loading
+}) => {
+
     return (
 
         <div className='w-full min-h-[calc(100vh-40px)] flex flex-col justify-center items-center text-gray-800 rounded-xl bg-gray-50'>
-            <form>
+            <form onSubmit={handleSubmit}>
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
                     <div className='space-y-6'>
                         <div className='space-y-1 text-sm'>
@@ -84,12 +91,17 @@ const AddRoomForm = ({ dates, handleDates }) => {
                                             type='file'
                                             name='image'
                                             id='image'
+                                            onChange={e => handlImage(e.target.files[0])}
                                             accept='image/*'
                                             hidden
                                         />
-                                        <div className='bg-rose-500 text-white border border-gray-300 rounded font-semibold cursor-pointer p-1 px-3 hover:bg-rose-500'>
-                                            Upload Image
+                                        <div className='flex flex-row justify-between items-center gap-16 object-cover overflow-hidden'>
+                                            <div className='bg-rose-500 text-white border border-gray-300 rounded font-semibold cursor-pointer p-1 px-3 hover:bg-rose-500 '>
+                                                {imageText.length > 15 ? imageText.split('.')[0].slice(0, 15) + '...' + imageText.split('.')[1] : imageText}
+                                            </div>
+                                            <div>  <img className='h-12 w-12' src={imagePreview} alt="" /></div>
                                         </div>
+
                                     </label>
                                 </div>
                             </div>
@@ -169,10 +181,12 @@ const AddRoomForm = ({ dates, handleDates }) => {
                 </div>
 
                 <button
+                    disabled={loading}
                     type='submit'
                     className='w-full p-3 mt-5 text-center font-medium text-white transition duration-200 rounded shadow-md bg-rose-500'
                 >
-                    Save & Continue
+                    {loading ? <TbFidgetSpinner className='animate-spin m-auto ' /> : 'Save & Continue'}
+
                 </button>
             </form>
         </div>

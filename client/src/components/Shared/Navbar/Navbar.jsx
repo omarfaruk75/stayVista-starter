@@ -71,7 +71,7 @@ const Navbar = () => {
                       <>
                         <Link
                           to='/dashboard'
-                          className='block  px-4 hover:bg-neutral-100 transition font-semibold'
+                          className='px-4 text-center hover:bg-neutral-100 transition font-semibold cursor-pointer'
                         >
                           Dashboard
                         </Link>
