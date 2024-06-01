@@ -4,10 +4,44 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../../../hooks/useAuth'
 import avatarImg from '../../../assets/images/placeholder.jpg'
+import HostRequestModal from '../../Modal/HostRequestModal'
+import useAxiosSecure from '../../../hooks/useAxiosSecure'
+import toast from 'react-hot-toast'
 
 const Navbar = () => {
   const { user, logOut } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
+  const axiosSecure = useAxiosSecure();
+  //for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const closeModal = () => {
+    setIsModalOpen(false)
+  }
+
+  const modalHandler = async () => {
+
+    try {
+      const currentUser = {
+        email: user?.email,
+        role: 'guest',
+        status: 'Requested'
+      }
+      const { data } = await axiosSecure.put(`/user`, currentUser)
+      console.log(data);
+      if (data.modifiedCount > 0) {
+        toast.success('Success! Please wait for admin confirmation')
+      }
+      else {
+        toast.success('Please! Please wait for admin approval')
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error(err.message)
+    } finally {
+      closeModal()
+    }
+  }
+
 
   return (
     <div className='fixed w-full bg-white z-10 shadow-sm'>
@@ -28,16 +62,20 @@ const Navbar = () => {
             <div className='relative'>
               <div className='flex flex-row items-center gap-3'>
                 {/* Become A Host btn */}
+
                 <div className='hidden md:block'>
-                  {!user && (
-                    <button
-                      disabled={!user}
-                      className='disabled:cursor-not-allowed cursor-pointer hover:bg-neutral-100 py-3 px-4 text-sm font-semibold rounded-full  transition'
-                    >
-                      Host your home
-                    </button>
-                  )}
+                  {/* {!user && ( */}
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    // disabled={!user}
+                    className='disabled:cursor-not-allowed cursor-pointer hover:bg-neutral-100 py-3 px-4 text-sm font-semibold rounded-full  transition'
+                  >
+                    Host your home
+                  </button>
+                  {/* )} */}
                 </div>
+                {/* Modal */}
+                <HostRequestModal isOpen={isModalOpen} modalHandler={modalHandler} closeModal={closeModal} />
                 {/* Dropdown btn */}
                 <div
                   onClick={() => setIsOpen(!isOpen)}

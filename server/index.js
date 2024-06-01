@@ -19,6 +19,8 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
 
+
+
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token
   console.log(token)
@@ -47,6 +49,26 @@ async function run() {
   try {
 
 const roomsCollection = client.db('stayvista').collection('rooms')
+const usersCollection = client.db('stayvista').collection('users')
+
+//verifyAdmin middleware
+
+const verifyAdmin = async (req,res,next)=>{
+  const user=req.user;
+  const query={email:user?.email}
+  const result = await usersCollection.findOne(query)
+  if(!result||result?.role!=="admin") return res.status(401).send({message:"unauthorized access"})
+next()
+  }
+//verifyHost middleware
+
+const verifyHost = async (req,res,next)=>{
+  const user=req.user;
+  const query={email:user?.email}
+  const result = await usersCollection.findOne(query)
+  if(!result||result?.role!=="host") return res.status(401).send({message:"unauthorized access"})
+next()
+  }
 
 //get all rooms data from database
 app.get('/rooms', async(req,res)=>{
@@ -58,18 +80,26 @@ app.get('/rooms', async(req,res)=>{
 })
 
 //save a room data in database
-app.post('/room',async(req,res)=>{
+app.post('/room',verifyToken,verifyHost,async(req,res)=>{
   const roomData=req.body;
   const result=await roomsCollection.insertOne(roomData);
   res.send(result)
 })
 //get all rooms data for host
-app.get('/my-listings/:email',async(req,res)=>{
+app.get('/my-listings/:email',verifyToken,verifyHost,async(req,res)=>{
   const email=req.params.email
   const query={'host.email':email} 
   const result=await roomsCollection.find(query).toArray()
   res.send(result);
 
+})
+
+//delete a room
+app.delete('/room/:id',verifyToken,verifyHost,async(req,res)=>{
+  const id=req.params.id;
+const query = {_id:new ObjectId(id)}
+const result=await roomsCollection.deleteOne(query)
+res.send(result);
 })
 
 //get a single data from database
@@ -116,6 +146,61 @@ app.get('/room/:id', async(req,res)=>{
         res.status(500).send(err)
       }
     })
+
+    //save a user data in db
+app.put('/user',async(req,res)=>{
+  const user=req.body;
+  //check if user already exist in db
+const query={email:user?.email}
+  const isExist= await usersCollection.findOne(query)
+  if(isExist) {
+    if(user.status==="Requested"){
+      const result =await usersCollection.updateOne(query,{
+        $set:{status:user?.status}
+      })
+      return res.send(result)
+    }
+    else{
+  return res.send(isExist)}
+  }
+  const options={upsert:true}
+  
+  const updateDoc={
+    $set:{
+      ...user,
+      timestamp:Date.now(),
+    }
+  }
+  const result = await usersCollection.updateOne(query,updateDoc,options)
+  res.send(result);
+})
+
+//get a user info bu email from db
+app.get('/user/:email',async(req,res)=>{
+  const email=req.params.email;
+  const result=await usersCollection.findOne({email})
+  res.send(result);
+})
+//get all user data from db
+app.get('/users',verifyToken,verifyAdmin,async(req,res)=>{
+  const users=req.body;
+  const result=await usersCollection.find(users).toArray()
+  res.send(result)
+})
+
+//update users role
+app.patch('/users/update/:email',async(req,res)=>{
+  const email = req.params.email
+  const user=req.body
+  const query ={email}
+  const updateDoc={
+    $set:{
+      ...user,timestamp: Date.now(),
+    }
+  }
+  const result=await usersCollection.updateOne(query,updateDoc)
+  res.send(result)
+})
 
     // Save or modify user email, status in DB
     app.put('/users/:email', async (req, res) => {
